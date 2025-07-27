@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tebak Kuadran - Ice Breaking Matematika</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background-image: url(BG.png);
+            background-position: center;
+            background-size: cover;
+            min-height: 115vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .container {
+            max-width: 900px;
+            max-height: 90vh;
+            overflow: hidden;
+        }
+        
+        .btn-start {
+            background: linear-gradient(45deg, #FF512F, #F09819);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-start:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.25);
+        }
+        
+        .btn-start:active {
+            transform: translateY(1px);
+        }
+        
+        .coordinate-value {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .timer {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .coordinate-system {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .axis {
+            position: absolute;
+            background-color: #333;
+        }
+        
+        .x-axis {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            left: 0;
+        }
+        
+        .y-axis {
+            width: 2px;
+            height: 100%;
+            top: 0;
+            left: 50%;
+        }
+        
+        .point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #FF512F;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 4px rgba(255, 81, 47, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 81, 47, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 81, 47, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 81, 47, 0); }
+        }
+        
+        .quadrant-label {
+            position: absolute;
+            font-size: 0.8rem;
+            color: #555;
+        }
+        
+        .q1 { top: 10px; right: 10px; }
+        .q2 { top: 10px; left: 10px; }
+        .q3 { bottom: 10px; left: 10px; }
+        .q4 { bottom: 10px; right: 10px; }
+        
+        .axis-label {
+            position: absolute;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .x-positive { right: 5px; top: 48%; }
+        .x-negative { left: 5px; top: 48%; }
+        .y-positive { top: 5px; left: 52%; }
+        .y-negative { bottom: 5px; left: 52%; }
+        
+        .result-box {
+            background: linear-gradient(45deg, #00b09b, #96c93d);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .grid-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.2;
+        }
+        
+        .grid-line {
+            position: absolute;
+            background-color: #aaa;
+        }
+        
+        .grid-line-x {
+            width: 100%;
+            height: 1px;
+        }
+        
+        .grid-line-y {
+            width: 1px;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div class="container bg-white rounded-xl shadow-xl p-6 md:p-8">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-indigo-600 mb-2">🎮 Tebak Kuadran 🎲</h1>
+            <p class="text-lg text-gray-600 bg-yellow-100 p-3 rounded-lg shadow-sm">
+                Perhatikan nilai x dan y. Tentukan kuadran koordinat pada koordinat (x,y) dengan tepat! 
+                Jawaban akan muncul dalam 10 detik.
+            </p>
+        </div>
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="flex flex-col items-center justify-center py-10">
+            <button id="start-button" class="btn-start text-white text-2xl font-bold py-6 px-12 rounded-full">
+                Mulai Permainan
+            </button>
+        </div>
+        
+        <!-- Game Screen (initially hidden) -->
+        <div id="game-screen" class="hidden">
+            <!-- Coordinates Display -->
+            <div class="text-center mb-8">
+                <div class="text-3xl font-bold mb-2">Titik Koordinat:</div>
+                <div class="flex justify-center items-center gap-6">
+                    <div class="coordinate-value bg-blue-500 text-white text-5xl font-bold py-4 px-8 rounded-lg shadow-lg">
+                        X = <span id="x-value">0</span>
+                    </div>
+                    <div class="coordinate-value bg-purple-500 text-white text-5xl font-bold py-4 px-8 rounded-lg shadow-lg">
+                        Y = <span id="y-value">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Timer -->
+            <div class="text-center mb-6">
+                <div class="text-xl">Waktu tersisa:</div>
+                <div id="timer" class="timer text-red-500">10</div>
+                <div class="text-gray-600 italic">Tentukan Jawabanmu!</div>
+            </div>
+        </div>
+        
+        <!-- Result Screen (initially hidden) -->
+        <div id="result-screen" class="hidden">
+            <div class="flex flex-col md:flex-row items-center justify-center gap-8">
+                <!-- Coordinate System -->
+                <div class="coordinate-system">
+                    <!-- Grid Lines -->
+                    <div class="grid-lines" id="grid-lines"></div>
+                    
+                    <!-- Axes -->
+                    <div class="axis x-axis"></div>
+                    <div class="axis y-axis"></div>
+                    
+                    <!-- Quadrant Labels -->
+                    <div class="quadrant-label q1">Kuadran I</div>
+                    <div class="quadrant-label q2">Kuadran II</div>
+                    <div class="quadrant-label q3">Kuadran III</div>
+                    <div class="quadrant-label q4">Kuadran IV</div>
+                    
+                    <!-- Axis Labels -->
+                    <div class="axis-label x-positive">X+</div>
+                    <div class="axis-label x-negative">X-</div>
+                    <div class="axis-label y-positive">Y+</div>
+                    <div class="axis-label y-negative">Y-</div>
+                    
+                    <!-- Point (will be positioned by JS) -->
+                    <div id="point" class="point"></div>
+                </div>
+                
+                <!-- Answer Box -->
+                <div class="result-box text-white p-6 text-center w-full md:w-1/2">
+                    <h2 class="text-2xl font-bold mb-3">Jawaban:</h2>
+                    <p id="answer" class="text-3xl font-bold"></p>
+                    <div class="mt-6">
+                        <button id="play-again" class="bg-white text-green-600 font-bold py-3 px-6 rounded-lg shadow hover:bg-gray-100 transition">
+                            Main Lagi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startButton = document.getElementById('start-button');
+        const xValue = document.getElementById('x-value');
+        const yValue = document.getElementById('y-value');
+        const timerElement = document.getElementById('timer');
+        const point = document.getElementById('point');
+        const answer = document.getElementById('answer');
+        const playAgainButton = document.getElementById('play-again');
+        const gridLines = document.getElementById('grid-lines');
+        
+        // Game variables
+        let x, y;
+        let timerInterval;
+        let timeLeft;
+        
+        // Create grid lines
+        function createGridLines() {
+            gridLines.innerHTML = '';
+            // Create 10 horizontal and 10 vertical lines
+            for (let i = 1; i < 10; i++) {
+                // Horizontal lines
+                const horizontalLine = document.createElement('div');
+                horizontalLine.className = 'grid-line grid-line-x';
+                horizontalLine.style.top = `${i * 10}%`;
+                gridLines.appendChild(horizontalLine);
+                
+                // Vertical lines
+                const verticalLine = document.createElement('div');
+                verticalLine.className = 'grid-line grid-line-y';
+                verticalLine.style.left = `${i * 10}%`;
+                gridLines.appendChild(verticalLine);
+            }
+        }
+        
+        // Generate random coordinates between -10 and 10
+        function generateCoordinates() {
+            x = Math.floor(Math.random() * 21) - 10;
+            y = Math.floor(Math.random() * 21) - 10;
+            
+            // Avoid zero values for both x and y
+            if (x === 0 && y === 0) {
+                x = Math.random() < 0.5 ? 1 : -1;
+            }
+            
+            xValue.textContent = x;
+            yValue.textContent = y;
+        }
+        
+        // Position the point on the coordinate system
+        function positionPoint() {
+            // Convert coordinates to percentage (0,0 is center)
+            const xPos = 50 + (x * 5); // 5% per unit
+            const yPos = 50 - (y * 5); // Inverted for Y-axis
+            
+            point.style.left = `${xPos}%`;
+            point.style.top = `${yPos}%`;
+        }
+        
+        // Determine which quadrant the point is in
+        function determineQuadrant() {
+            if (x > 0 && y > 0) return "Kuadran I";
+            if (x < 0 && y > 0) return "Kuadran II";
+            if (x < 0 && y < 0) return "Kuadran III";
+            if (x > 0 && y < 0) return "Kuadran IV";
+            if (x === 0 && y !== 0) return "Titik berada di Sumbu Y";
+            if (y === 0 && x !== 0) return "Titik berada di Sumbu X";
+            return "Titik berada di Pusat (0,0)";
+        }
+        
+        // Start the timer
+        function startTimer() {
+            timeLeft = 10; // Changed to 10 seconds
+            timerElement.textContent = timeLeft;
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                
+                // Change color as time runs out
+                if (timeLeft <= 5) {
+                    timerElement.classList.add('text-red-600');
+                }
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    showResult();
+                }
+            }, 1000);
+        }
+        
+        // Show the result
+        function showResult() {
+            gameScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            
+            positionPoint();
+            answer.textContent = determineQuadrant();
+        }
+        
+        // Start the game
+        function startGame() {
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            resultScreen.classList.add('hidden');
+            
+            // Reset timer color
+            timerElement.classList.remove('text-red-600');
+            
+            generateCoordinates();
+            startTimer();
+        }
+        
+        // Event listeners
+        startButton.addEventListener('click', startGame);
+        playAgainButton.addEventListener('click', startGame);
+        
+        // Initialize grid lines
+        createGridLines();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'963989e5c72dfdf2',t:'MTc1MzI1NjUyMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
